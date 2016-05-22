@@ -1,8 +1,8 @@
-template <class T> class Optimizer {
+template <class T> class Optimizable {
 	public:
-		Optimizer();
-		Optimizer(double _scale, double _threshold, double (*cost)(T params[], int n));
-		void interate(T params[], int n);
+		Optimizable();
+		Optimizable(double _scale, double _threshold);
+		void iterate(T params[], int n);
 		void optimize(T params[], int n);
 		void setScale(double _scale) {
 			scale = _scale;
@@ -10,12 +10,9 @@ template <class T> class Optimizer {
 		void setThreshold(double _threshold) {
 			threshold = _threshold;
 		}
-		void setCostFunction(double (*_cost)(T params[], int n)) {
-			cost = _cost;
-		}
+		virutal double costFunction(T params[], int n) = 0;
 	private:
 		double scale;
 		double threshold;
 		double dx;
-		double (*cost)(T params[], int n);
 };
