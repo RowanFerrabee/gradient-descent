@@ -4,34 +4,70 @@
 
 using namespace std;
 
-class MakeQuadratic : public Optimizable {
-	//High cost if vals[] is not quadratic
-	virtual double costFunction(double vals[], int n) {
-		//In quadratic function, second differences should be constant
-		//Therefore, have high cost if not constant second differences
-		double cost = 0;
-		for (int i=0; i<n-3; i++) {
-			double thisSecondDiff = (vals[i+2]-vals[i+1]) - (vals[i+1]-vals[i]);
-			double nextSecondDiff = (vals[i+3]-vals[i+2]) - (vals[i+2]-vals[i+1]);
-			double diffSecondDiff = fabs(nextSecondDiff - thisSecondDiff);
-			cost += diffSecondDiff;
+class BestFit : public Optimizable {
+private:
+	int numDataPoints;
+	double* x_data;
+	double* y_data;
+public:
+	BestFit(double x[], double y[], int num) {
+		numDataPoints = num;
+		x_data = new double [numDataPoints];
+		y_data = new double [numDataPoints];
+		for (int i=0; i<numDataPoints; i++) {
+			x_data[i] = x[i];
+			y_data[i] = y[i];
 		}
-		cout << "Total cost: " << cost << endl;
-		return cost;
+
+		n = 2;
+		params = new double [n];	//Two parameters, for this model: m and b
+		for (int i=0; i<n; i++)		//Set them both to zero as a starting point
+			params[i] = 0;
+
+		setScale(0.001);			//Set scale (this part is tricky and often has to be tinkered with)
+		setThreshold(0.0005);		//Set max allowable error as defined by cost function
+	}
+
+	~BestFit() {
+		delete[] x_data;
+		delete[] y_data;
+		delete[] params;
+	}
+
+	//High cost if points are far away from line
+	virtual double costFunction() {
+		double sumSquares = 0;
+
+		for (int i=0; i<numDataPoints; i++) {
+			double error = y_data[i] - modelAt(x_data[i]);
+
+			double squaredError = error*error;
+
+			sumSquares += squaredError;
+		}
+		return sumSquares;
+	}
+
+	double modelAt(double x) {
+		double m = params[0];
+		double b = params[1];
+
+		return m*x + b;
+	}
+
+	void printModel() {
+		double m = params[0];
+		double b = params[1];
+
+		cout << "The model is y = " << m << "x + " << b << endl;
 	}
 };
 
 int main() {
-	MakeQuadratic* m = new MakeQuadratic();
-	m->setScale(0.02);
-	m->setThreshold(8);
+	double x_data[] = {0, 2, 4, 6, 8};
+	double y_data[] = {1, 2, 3, 4, 5};
 
-	int n = 9;
-	double sequence[9] = {1,4,9,16,25,36,49,64,200};
-
-	m->optimize(sequence, n);
-
-	for (int i=0; i<n; i++) {
-		cout << sequence[i] << ", ";
-	} cout << endl;
+	BestFit line(x_data, y_data, 5);
+	line.optimize();
+	line.printModel();
 }
